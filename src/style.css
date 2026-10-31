@@ -720,7 +720,9 @@ body.editing-setlist #setlist-bar,
 body.editing-setlist #loading,
 body.editing-setlist .description { display: none; }
 .setlist-items { list-style: none; padding: 0; margin: 0.5rem 0; }
-.setlist-items li { background: #f4f6f8; border-radius: 6px; margin-bottom: 0.4rem; padding: 0.8rem; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: pan-y; }
+.setlist-items li { background: #f4f6f8; border-radius: 6px; margin-bottom: 0.4rem; padding: 0.4rem 0.8rem 0.4rem 0; display: flex; align-items: center; gap: 0.5rem; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .setlist-items li.dragging { background: #eef4ff; box-shadow: 0 2px 8px rgba(0,0,0,0.25); transform: scale(1.02); }
 .setlist-picker { max-height: none; overflow: visible; }
 .setlist-editor-actions { flex-wrap: wrap; }
+.setlist-items li .drag-handle { flex: none; display: flex; align-items: center; justify-content: center; width: 3rem; min-height: 2.8rem; font-size: 1.6rem; color: #888; cursor: grab; touch-action: none; }
+.setlist-items li.dragging .drag-handle { cursor: grabbing; color: #3498db; }

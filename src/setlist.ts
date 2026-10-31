@@ -75,33 +75,18 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
   let ids: string[] = initial ? [...initial.ids] : [];
   const title = (id: string) => getSongs().find(s => s.id === id)?.title ?? id;
 
-  const LONG_PRESS_MS = 250;
-  const MOVE_TOLERANCE = 8;
-
-  // Ziehen an der ganzen Zeile (Pointer Events). Maus: sofort nach kleiner Bewegung.
-  // Touch: nach langem Drücken, damit normales Scrollen weiter funktioniert.
-  const attachDrag = (li: HTMLElement, index: number) => {
-    li.addEventListener('pointerdown', e => {
-      if ((e.target as HTMLElement).closest('button')) return;
-      const isTouch = e.pointerType === 'touch';
-      const startX = e.clientX;
-      const startY = e.clientY;
-      let dragging = false;
-      let timer: number | undefined;
-      let lastY = startY;
-      let scrollRaf = 0;
+  // Ziehen nur am Griff (touch-action: none), dadurch gibt es keinen Konflikt mit dem Scrollen.
+  // Listener hängen an window, weil das Umsortieren das Element im DOM verschiebt.
+  const attachDrag = (li: HTMLElement, handle: HTMLElement, index: number) => {
+    handle.addEventListener('pointerdown', e => {
+      e.preventDefault();
       let from = index;
-      let items: HTMLElement[] = [];
-
-      const blockScroll = (ev: TouchEvent) => { if (dragging) ev.preventDefault(); };
-
-      const begin = () => {
-        dragging = true;
-        items = Array.from(itemsList.children) as HTMLElement[];
-        li.classList.add('dragging');
-        navigator.vibrate?.(15);
-        autoScroll();
-      };
+      let lastY = e.clientY;
+      let scrollRaf = 0;
+      let finished = false;
+      const items = Array.from(itemsList.children) as HTMLElement[];
+      li.classList.add('dragging');
+      navigator.vibrate?.(15);
 
       const reorder = () => {
         let to = from;
@@ -120,7 +105,6 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
 
       // Am oberen/unteren Rand der Seite mitscrollen
       const autoScroll = () => {
-        if (!dragging) return;
         const edge = 70;
         if (lastY < edge) window.scrollBy(0, -12);
         else if (lastY > window.innerHeight - edge) window.scrollBy(0, 12);
@@ -128,52 +112,23 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
         scrollRaf = requestAnimationFrame(autoScroll);
       };
 
-      const onMove = (ev: PointerEvent) => {
-        lastY = ev.clientY;
-        if (!dragging) {
-          const moved = Math.hypot(ev.clientX - startX, ev.clientY - startY) > MOVE_TOLERANCE;
-          if (!moved) return;
-          if (isTouch) { cleanup(); return; } // Scroll-Geste, kein Ziehen
-          begin();
-        }
-        reorder();
-      };
-
-      // Listener hängen an window (nicht am Element), weil das Umsortieren das Element im DOM verschiebt
-      // und dabei Pointer-Capture verloren ginge. cleanup ist idempotent.
-      let finished = false;
-      const cleanup = () => {
+      const onMove = (ev: PointerEvent) => { lastY = ev.clientY; reorder(); };
+      const end = () => {
         if (finished) return;
         finished = true;
-        window.clearTimeout(timer);
         cancelAnimationFrame(scrollRaf);
         window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onEnd);
-        window.removeEventListener('pointercancel', onEnd);
-        window.removeEventListener('touchend', onEnd);
-        window.removeEventListener('touchcancel', onEnd);
-        window.removeEventListener('blur', onEnd);
-        window.removeEventListener('touchmove', blockScroll);
+        window.removeEventListener('pointerup', end);
+        window.removeEventListener('pointercancel', end);
+        window.removeEventListener('blur', end);
+        render();
       };
-      const onEnd = () => {
-        const wasDragging = dragging;
-        dragging = false;
-        cleanup();
-        if (wasDragging) render();
-      };
-
       window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onEnd);
-      window.addEventListener('pointercancel', onEnd);
-      window.addEventListener('touchend', onEnd);
-      window.addEventListener('touchcancel', onEnd);
-      window.addEventListener('blur', onEnd);
-      if (isTouch) {
-        window.addEventListener('touchmove', blockScroll, { passive: false });
-        timer = window.setTimeout(begin, LONG_PRESS_MS);
-      }
+      window.addEventListener('pointerup', end);
+      window.addEventListener('pointercancel', end);
+      window.addEventListener('blur', end);
+      autoScroll();
     });
-    li.addEventListener('contextmenu', e => e.preventDefault());
   };
 
   const smallButton = (label: string, aria: string, cls: string, onClick: () => void) => {
@@ -206,11 +161,16 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
       const li = document.createElement('li');
       const span = document.createElement('span');
       span.textContent = title(id);
+      const handle = document.createElement('span');
+      handle.className = 'drag-handle';
+      handle.textContent = '⠿';
+      handle.setAttribute('aria-label', 'Zum Sortieren ziehen');
       li.append(
+        handle,
         span,
         smallButton('×', `${title(id)} entfernen`, 'remove', () => { ids.splice(i, 1); render(); }),
       );
-      attachDrag(li, i);
+      attachDrag(li, handle, i);
       itemsList.appendChild(li);
     });
     openBtn.disabled = copyBtn.disabled = ids.length === 0;
