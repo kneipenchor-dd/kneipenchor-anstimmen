@@ -5,5 +5,6 @@
         "alto": "-",
         "tenor": "-",
         "bass": "D"
-      }
+      },
+    "customChord": ["D", "F", "A"]
 }
