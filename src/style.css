@@ -683,7 +683,6 @@ td:nth-child(5) .play-button.playing { /* Bass was 4th, now 5th */
 .setlist-toast { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 900; display: flex; align-items: center; gap: 1rem; background: #333; color: white; padding: 0.6rem 1rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); max-width: 90%; }
 .setlist-toast.hidden { display: none; }
 .setlist-toast button { background: none; border: none; color: #7ec8ff; font: inherit; font-weight: 600; cursor: pointer; }
-li .drag-handle, .drag-handle { flex: none !important; cursor: grab; touch-action: none; user-select: none; padding: 0 0.4rem; color: #888; font-size: 1.2rem; }
 .setlist-items li.dragging { background: #eef4ff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 .setlist-input { width: 100%; box-sizing: border-box; padding: 0.5rem; margin: 0.5rem 0; font-size: 1rem; }
 .setlist-items, .setlist-picker { padding-left: 1.5rem; margin: 0.5rem 0; }
@@ -711,3 +710,17 @@ li .drag-handle, .drag-handle { flex: none !important; cursor: grab; touch-actio
 .setlist-items li .setlist-icon-btn:last-child { color: #e74c3c; border-color: #e74c3c; }
 .setlist-picker li .setlist-icon-btn { background-color: #2ecc71; border-color: #2ecc71; color: white; }
 .setlist-input { border: 1px solid #ccc; border-radius: 4px; }
+
+/* Editor als eigene Ansicht */
+.setlist-editor { display: none; }
+body.editing-setlist .setlist-editor { display: block; }
+body.editing-setlist #song-table,
+body.editing-setlist #search-section,
+body.editing-setlist #setlist-bar,
+body.editing-setlist #loading,
+body.editing-setlist .description { display: none; }
+.setlist-items { list-style: none; padding: 0; margin: 0.5rem 0; }
+.setlist-items li { background: #f4f6f8; border-radius: 6px; margin-bottom: 0.4rem; padding: 0.8rem; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: pan-y; }
+.setlist-items li.dragging { background: #eef4ff; box-shadow: 0 2px 8px rgba(0,0,0,0.25); transform: scale(1.02); }
+.setlist-picker { max-height: none; overflow: visible; }
+.setlist-editor-actions { flex-wrap: wrap; }

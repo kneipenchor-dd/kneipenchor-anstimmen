@@ -55,70 +55,124 @@ export function resolveSetlistSongs(setlist: Setlist, allSongs: Song[]): { songs
   return { songs, unknown };
 }
 
-// Editor-Modal: Setlist zusammenstellen, sortieren und als Link teilen
+// Editor: eigene Ansicht auf der Seite (kein Modal), damit Scrollen und Ziehen sich nicht stören
 export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | null): void {
-  const modal = document.getElementById('setlist-modal') as HTMLElement;
+  const editor = document.getElementById('setlist-editor') as HTMLElement;
   const nameInput = document.getElementById('setlist-name-input') as HTMLInputElement;
   const itemsList = document.getElementById('setlist-items') as HTMLOListElement;
   const pickerSearch = document.getElementById('setlist-picker-search') as HTMLInputElement;
   const picker = document.getElementById('setlist-picker') as HTMLUListElement;
   const hint = document.getElementById('setlist-editor-hint') as HTMLElement;
-  const closeBtn = document.getElementById('setlist-modal-close') as HTMLButtonElement;
+  const cancelBtn = document.getElementById('setlist-cancel') as HTMLButtonElement;
   const openBtn = document.getElementById('setlist-open') as HTMLButtonElement;
   const copyBtn = document.getElementById('setlist-copy') as HTMLButtonElement;
   const triggers = [
     document.getElementById('setlist-editor-trigger'),
     document.getElementById('setlist-edit'),
   ];
-  if (!modal) return;
+  if (!editor) return;
 
   let ids: string[] = initial ? [...initial.ids] : [];
   const title = (id: string) => getSongs().find(s => s.id === id)?.title ?? id;
 
-  const iconButton = (label: string, aria: string, onClick: () => void, disabled = false) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'setlist-icon-btn';
-    b.textContent = label;
-    b.setAttribute('aria-label', aria);
-    b.disabled = disabled;
-    b.addEventListener('click', onClick);
-    return b;
-  };
+  const LONG_PRESS_MS = 250;
+  const MOVE_TOLERANCE = 8;
 
-  // Drag-and-drop per Pointer Events (funktioniert mit Maus und Touch)
-  const startDrag = (e: PointerEvent, handle: HTMLElement, index: number) => {
-    e.preventDefault();
-    const items = Array.from(itemsList.children) as HTMLElement[];
-    let from = index;
-    items[index].classList.add('dragging');
-    handle.setPointerCapture(e.pointerId);
+  // Ziehen an der ganzen Zeile (Pointer Events). Maus: sofort nach kleiner Bewegung.
+  // Touch: nach langem Drücken, damit normales Scrollen weiter funktioniert.
+  const attachDrag = (li: HTMLElement, index: number) => {
+    li.addEventListener('pointerdown', e => {
+      if ((e.target as HTMLElement).closest('button')) return;
+      const isTouch = e.pointerType === 'touch';
+      const startX = e.clientX;
+      const startY = e.clientY;
+      let dragging = false;
+      let timer: number | undefined;
+      let lastY = startY;
+      let scrollRaf = 0;
+      let from = index;
+      let items: HTMLElement[] = [];
 
-    const onMove = (ev: PointerEvent) => {
-      const y = ev.clientY;
-      let to = from;
-      items.forEach((el, i) => {
-        const r = el.getBoundingClientRect();
-        if (y >= r.top && y <= r.bottom) to = i;
-      });
-      if (to !== from) {
+      const blockScroll = (ev: TouchEvent) => { if (dragging) ev.preventDefault(); };
+
+      const begin = () => {
+        dragging = true;
+        items = Array.from(itemsList.children) as HTMLElement[];
+        li.classList.add('dragging');
+        li.setPointerCapture(e.pointerId);
+        navigator.vibrate?.(15);
+        autoScroll();
+      };
+
+      const reorder = () => {
+        let to = from;
+        items.forEach((el, i) => {
+          const r = el.getBoundingClientRect();
+          if (lastY >= r.top && lastY <= r.bottom) to = i;
+        });
+        if (to === from) return;
         const [moved] = ids.splice(from, 1);
         ids.splice(to, 0, moved);
         const [movedEl] = items.splice(from, 1);
         items.splice(to, 0, movedEl);
         items.forEach(el => itemsList.appendChild(el));
         from = to;
+      };
+
+      // Am oberen/unteren Rand der Seite mitscrollen
+      const autoScroll = () => {
+        if (!dragging) return;
+        const edge = 70;
+        if (lastY < edge) window.scrollBy(0, -12);
+        else if (lastY > window.innerHeight - edge) window.scrollBy(0, 12);
+        reorder();
+        scrollRaf = requestAnimationFrame(autoScroll);
+      };
+
+      const onMove = (ev: PointerEvent) => {
+        lastY = ev.clientY;
+        if (!dragging) {
+          const moved = Math.hypot(ev.clientX - startX, ev.clientY - startY) > MOVE_TOLERANCE;
+          if (!moved) return;
+          if (isTouch) { cleanup(); return; } // Scroll-Geste, kein Ziehen
+          begin();
+        }
+        reorder();
+      };
+
+      const cleanup = () => {
+        window.clearTimeout(timer);
+        cancelAnimationFrame(scrollRaf);
+        li.removeEventListener('pointermove', onMove);
+        li.removeEventListener('pointerup', onEnd);
+        li.removeEventListener('pointercancel', onEnd);
+        document.removeEventListener('touchmove', blockScroll);
+      };
+      const onEnd = () => {
+        const wasDragging = dragging;
+        dragging = false;
+        cleanup();
+        if (wasDragging) render();
+      };
+
+      li.addEventListener('pointermove', onMove);
+      li.addEventListener('pointerup', onEnd);
+      li.addEventListener('pointercancel', onEnd);
+      if (isTouch) {
+        document.addEventListener('touchmove', blockScroll, { passive: false });
+        timer = window.setTimeout(begin, LONG_PRESS_MS);
       }
-    };
-    const onEnd = () => {
-      handle.removeEventListener('pointermove', onMove);
-      handle.removeEventListener('pointerup', onEnd);
-      handle.removeEventListener('pointercancel', onEnd);
-      render();
-    };
-    handle.addEventListener('pointermove', onMove);
-    handle.addEventListener('pointerup', onEnd);
-    handle.addEventListener('pointercancel', onEnd);
+    });
+  };
+
+  const smallButton = (label: string, aria: string, cls: string, onClick: () => void) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `setlist-icon-btn ${cls}`;
+    b.textContent = label;
+    b.setAttribute('aria-label', aria);
+    b.addEventListener('click', onClick);
+    return b;
   };
 
   function renderPicker(): void {
@@ -130,7 +184,7 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
         const li = document.createElement('li');
         const span = document.createElement('span');
         span.textContent = s.title;
-        li.append(span, iconButton('+', `${s.title} hinzufügen`, () => { ids.push(s.id!); render(); }));
+        li.append(span, smallButton('+', `${s.title} hinzufügen`, 'add', () => { ids.push(s.id!); render(); }));
         picker.appendChild(li);
       });
   }
@@ -141,16 +195,11 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
       const li = document.createElement('li');
       const span = document.createElement('span');
       span.textContent = title(id);
-      const handle = document.createElement('span');
-      handle.className = 'drag-handle';
-      handle.textContent = '⠿';
-      handle.title = 'Zum Sortieren ziehen';
-      handle.addEventListener('pointerdown', e => startDrag(e, handle, i));
       li.append(
-        handle,
         span,
-        iconButton('×', 'Entfernen', () => { ids.splice(i, 1); render(); }),
+        smallButton('×', `${title(id)} entfernen`, 'remove', () => { ids.splice(i, 1); render(); }),
       );
+      attachDrag(li, i);
       itemsList.appendChild(li);
     });
     openBtn.disabled = copyBtn.disabled = ids.length === 0;
@@ -163,13 +212,16 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
     nameInput.value = initial?.name ?? nameInput.value;
     hint.textContent = '';
     render();
-    modal.classList.remove('hidden');
+    document.body.classList.add('editing-setlist');
+    window.scrollTo(0, 0);
   };
-  const close = () => modal.classList.add('hidden');
+  const close = () => document.body.classList.remove('editing-setlist');
 
   triggers.forEach(t => t?.addEventListener('click', open));
-  closeBtn.addEventListener('click', close);
-  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  cancelBtn.addEventListener('click', close);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.body.classList.contains('editing-setlist')) close();
+  });
   pickerSearch.addEventListener('input', renderPicker);
   openBtn.addEventListener('click', () => { window.location.href = buildSetlistUrl(current()); });
   copyBtn.addEventListener('click', async () => {
