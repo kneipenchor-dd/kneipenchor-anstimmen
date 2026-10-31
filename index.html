@@ -8,7 +8,10 @@
 <body>
   <div id="app">
     <header class="app-header">
-      <h1>Chor Anfangstöne</h1>
+      <h1 id="app-title">Chor Anfangstöne</h1>
+      <div class="header-actions">
+      <a id="all-songs-link" class="all-songs-link hidden" href="./" title="Zur kompletten Liederliste">Alle Lieder</a>
+      <button id="setlist-editor-trigger" class="icon-button filter-trigger-button" aria-label="Setlist bearbeiten" title="Setlist erstellen/bearbeiten">📋</button>
       <button id="filter-modal-trigger" class="icon-button filter-trigger-button" aria-label="Filter öffnen" aria-haspopup="dialog" title="Filtereinstellungen">
     <svg fill="#000000" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
       width="800px" height="800px" viewBox="0 0 569.613 569.614"
@@ -50,11 +53,18 @@
     </svg>
     <span class="sr-only">Filtereinstellungen</span>
       </button>
+      </div>
     </header>
+    <!-- Setlist-Leiste (nur sichtbar, wenn eine Setlist geladen ist) -->
+    <div id="setlist-bar" class="setlist-bar hidden">
+      <span id="setlist-progress" class="setlist-progress"></span>
+      <button id="setlist-reset" type="button" class="setlist-reset" title="Alle Lieder wieder als ungesungen markieren">↺ Zurücksetzen</button>
+    </div>
+
     <p class="description">Wähle einen Anfangston zum Abspielen</p>
 
     <!-- Suchfeld -->
-    <div class="search-section">
+    <div id="search-section" class="search-section">
       <div class="search-container">
         <input type="text" id="song-search" placeholder="Lied suchen..." aria-label="Lied suchen">
         <button id="clear-search" class="clear-search-btn" aria-label="Suche löschen">×</button>
@@ -116,6 +126,22 @@
         </div>
       </div>
     </div>
+    <!-- Setlist-Editor (eigene Ansicht, ersetzt die Liederliste) -->
+    <section id="setlist-editor" class="setlist-editor">
+      <h2>Setlist zusammenstellen</h2>
+      <input type="text" id="setlist-name-input" class="setlist-input" placeholder="Name, z. B. Sommerkonzert" aria-label="Name der Setlist">
+      <div class="setlist-editor-actions">
+        <button id="setlist-open" type="button" class="setlist-btn">Setlist öffnen</button>
+        <button id="setlist-copy" type="button" class="setlist-btn secondary">Link kopieren</button>
+        <button id="setlist-cancel" type="button" class="setlist-btn secondary">Zurück</button>
+      </div>
+      <small id="setlist-editor-hint"></small>
+      <h3>Reihenfolge <small>(am Griff ⠿ ziehen)</small></h3>
+      <ol id="setlist-items" class="setlist-items"></ol>
+      <h3>Lied hinzufügen</h3>
+      <input type="text" id="setlist-picker-search" class="setlist-input" placeholder="Lied suchen..." aria-label="Lied zum Hinzufügen suchen">
+      <ul id="setlist-picker" class="setlist-picker"></ul>
+    </section>
     <div id="loading">Lade Lieder...</div>
 
     <table id="song-table" class="hidden">

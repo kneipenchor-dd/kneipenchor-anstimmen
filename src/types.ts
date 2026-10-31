@@ -16,6 +16,7 @@ export  type SongNotes = {
   }
   
  export interface Song {
+    id?: string; // Dateiname der Song-JSON, wird beim Build gesetzt
     title: string;
     notes: SongNotes;
     customChord?: SongNote[]; // Optional: An array of notes for a specific chord override

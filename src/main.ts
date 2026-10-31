@@ -1,6 +1,7 @@
 // main.ts
 import './style.css'
 import audioManager from './audio-manager';
+import { Setlist, parseSetlistFromUrl, resolveSetlistSongs, loadDone, saveDone, setupSetlistEditor } from './setlist';
 import { VoiceType, Song, SongNote, Voice, isSongNote } from './types';
 
 // Zuordnung von Voice-Keys zu Display-Namen
@@ -301,7 +302,13 @@ async function loadSongs(): Promise<void> {
 
     const data = await response.json();
     allSongs = data.songs; // Alle Songs für die Suche speichern
-    displaySongs(data.songs);
+    const setlist = parseSetlistFromUrl();
+    setupSetlistEditor(() => allSongs, setlist);
+    if (setlist) {
+      setupSetlistView(setlist);
+    } else {
+      displaySongs(data.songs);
+    }
 
     const loadingElement = document.getElementById('loading');
     const songTableElement = document.getElementById('song-table');
@@ -320,7 +327,78 @@ async function loadSongs(): Promise<void> {
   }
 }
 
-function displaySongs(songs: Song[]): void {
+// Setlist-Ansicht: feste Reihenfolge, gesungene Lieder werden ausgeblendet
+function setupSetlistView(setlist: Setlist): void {
+  const { songs, unknown } = resolveSetlistSongs(setlist, allSongs);
+  const done = loadDone(setlist);
+  const bar = document.getElementById('setlist-bar')!;
+  const progress = document.getElementById('setlist-progress')!;
+  document.getElementById('app-title')!.textContent = setlist.name;
+  document.title = `${setlist.name} – Chor Anfangstöne`;
+  bar.classList.remove('hidden');
+  document.getElementById('search-section')?.classList.add('hidden');
+  document.getElementById('all-songs-link')?.classList.remove('hidden');
+  if (unknown.length > 0) {
+    console.warn('Unbekannte Lied-IDs in Setlist:', unknown);
+  }
+
+  displaySongs(songs, true);
+
+  const rows = () => document.querySelectorAll<HTMLElement>('#song-list .title-row');
+  const refresh = () => {
+    rows().forEach(row => {
+      const isDone = done.has(row.dataset.songId || '');
+      row.classList.toggle('song-done', isDone);
+      (row.nextElementSibling as HTMLElement | null)?.classList.toggle('song-done', isDone);
+    });
+    const doneCount = songs.filter(s => done.has(s.id || '')).length;
+    progress.textContent = `${doneCount}/${songs.length} gesungen`
+      + (unknown.length ? ` · ${unknown.length} unbekannt` : '');
+  };
+
+  let toastTimer: number | undefined;
+  const toast = document.createElement('div');
+  toast.className = 'setlist-toast hidden';
+  document.body.appendChild(toast);
+  const showUndo = (song: Song) => {
+    toast.innerHTML = '';
+    const text = document.createElement('span');
+    text.textContent = `„${song.title}“ gesungen`;
+    const undo = document.createElement('button');
+    undo.type = 'button';
+    undo.textContent = 'Rückgängig';
+    undo.addEventListener('click', () => {
+      done.delete(song.id || '');
+      saveDone(setlist, done);
+      toast.classList.add('hidden');
+      refresh();
+    });
+    toast.append(text, undo);
+    toast.classList.remove('hidden');
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toast.classList.add('hidden'), 6000);
+  };
+
+  document.getElementById('song-list')!.addEventListener('click', e => {
+    const btn = (e.target as HTMLElement).closest('.setlist-done-btn');
+    const id = btn?.closest<HTMLElement>('.title-row')?.dataset.songId;
+    const song = songs.find(s => s.id === id);
+    if (!id || !song) return;
+    done.add(id);
+    saveDone(setlist, done);
+    refresh();
+    showUndo(song);
+  });
+  document.getElementById('setlist-reset')!.addEventListener('click', () => {
+    if (done.size === 0 || !confirm('Alle Lieder wieder als ungesungen markieren?')) return;
+    done.clear();
+    saveDone(setlist, done);
+    refresh();
+  });
+  refresh();
+}
+
+function displaySongs(songs: Song[], setlistMode = false): void {
   const songList = document.getElementById('song-list');
   if (!songList) return;
 
@@ -332,6 +410,22 @@ function displaySongs(songs: Song[]): void {
     titleCell.textContent = song.title;
     titleCell.className = 'song-title';
     titleCell.colSpan = 5; // Überspannt alle 5 Spalten (4 Stimmen + Alle)
+    if (song.id) titleRow.dataset.songId = song.id;
+    if (setlistMode) {
+      titleCell.textContent = '';
+      const text = document.createElement('span');
+      text.className = 'song-title-text';
+      text.textContent = song.title;
+      const doneBtn = document.createElement('button');
+      doneBtn.type = 'button';
+      doneBtn.className = 'setlist-done-btn';
+      doneBtn.textContent = '☐ gesungen';
+      doneBtn.setAttribute('aria-label', `${song.title} als gesungen markieren`);
+      const inner = document.createElement('div');
+      inner.className = 'setlist-title-cell';
+      inner.append(text, doneBtn);
+      titleCell.appendChild(inner);
+    }
     titleRow.appendChild(titleCell);
     songList.appendChild(titleRow);
 
