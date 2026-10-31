@@ -61,17 +61,16 @@
         <span id="setlist-progress"></span>
       </div>
       <div class="setlist-actions">
-        <label><input type="checkbox" id="setlist-show-done"> Gesungene zeigen</label>
-        <button id="setlist-reset" type="button">Zurücksetzen</button>
-        <button id="setlist-edit" type="button">Bearbeiten</button>
-        <button id="setlist-close" type="button">Alle Lieder</button>
+        <button id="setlist-reset" type="button" class="setlist-btn">Zurücksetzen</button>
+        <button id="setlist-edit" type="button" class="setlist-btn secondary">Bearbeiten</button>
+        <button id="setlist-close" type="button" class="setlist-btn secondary">Alle Lieder</button>
       </div>
     </div>
 
     <p class="description">Wähle einen Anfangston zum Abspielen</p>
 
     <!-- Suchfeld -->
-    <div class="search-section">
+    <div id="search-section" class="search-section">
       <div class="search-container">
         <input type="text" id="song-search" placeholder="Lied suchen..." aria-label="Lied suchen">
         <button id="clear-search" class="clear-search-btn" aria-label="Suche löschen">×</button>
@@ -143,8 +142,8 @@
         <input type="text" id="setlist-picker-search" class="setlist-input" placeholder="Lied hinzufügen..." aria-label="Lied zum Hinzufügen suchen">
         <ul id="setlist-picker" class="setlist-picker"></ul>
         <div class="setlist-editor-actions">
-          <button id="setlist-open" type="button">Setlist öffnen</button>
-          <button id="setlist-copy" type="button">Link kopieren</button>
+          <button id="setlist-open" type="button" class="setlist-btn">Setlist öffnen</button>
+          <button id="setlist-copy" type="button" class="setlist-btn secondary">Link kopieren</button>
         </div>
         <small id="setlist-editor-hint"></small>
       </div>

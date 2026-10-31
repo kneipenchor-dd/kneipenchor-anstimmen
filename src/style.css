@@ -684,3 +684,23 @@ td:nth-child(5) .play-button.playing { /* Bass was 4th, now 5th */
 .setlist-items li, .setlist-picker li { display: flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0; }
 .setlist-items li span, .setlist-picker li span { flex: 1; }
 .setlist-editor-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+.setlist-btn, .setlist-icon-btn {
+  background-color: #3498db;
+  color: white;
+  border: 1px solid #3498db;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font: inherit;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.setlist-btn.secondary, .setlist-icon-btn {
+  background-color: white;
+  color: #3498db;
+}
+.setlist-icon-btn { min-width: 2rem; padding: 4px 8px; line-height: 1.2; }
+.setlist-btn:hover:not(:disabled), .setlist-icon-btn:hover:not(:disabled) { filter: brightness(92%); }
+.setlist-btn:disabled, .setlist-icon-btn:disabled { opacity: 0.4; cursor: default; }
+.setlist-items li .setlist-icon-btn:last-child { color: #e74c3c; border-color: #e74c3c; }
+.setlist-picker li .setlist-icon-btn { background-color: #2ecc71; border-color: #2ecc71; color: white; }
+.setlist-input { border: 1px solid #ccc; border-radius: 4px; }

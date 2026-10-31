@@ -333,9 +333,9 @@ function setupSetlistView(setlist: Setlist): void {
   const done = loadDone(setlist);
   const bar = document.getElementById('setlist-bar')!;
   const progress = document.getElementById('setlist-progress')!;
-  const showDone = document.getElementById('setlist-show-done') as HTMLInputElement;
   document.getElementById('setlist-name')!.textContent = setlist.name;
   bar.classList.remove('hidden');
+  document.getElementById('search-section')?.classList.add('hidden');
   if (unknown.length > 0) {
     console.warn('Unbekannte Lied-IDs in Setlist:', unknown);
   }
@@ -346,7 +346,7 @@ function setupSetlistView(setlist: Setlist): void {
   const refresh = () => {
     rows().forEach(row => {
       const isDone = done.has(row.dataset.songId || '');
-      const hide = isDone && !showDone.checked;
+      const hide = isDone;
       row.classList.toggle('song-done', hide);
       (row.nextElementSibling as HTMLElement | null)?.classList.toggle('song-done', hide);
       const box = row.querySelector<HTMLInputElement>('.setlist-check-cell input');
@@ -365,7 +365,6 @@ function setupSetlistView(setlist: Setlist): void {
     saveDone(setlist, done);
     refresh();
   });
-  showDone.addEventListener('change', refresh);
   document.getElementById('setlist-reset')!.addEventListener('click', () => {
     if (done.size === 0 || !confirm('Alle Lieder wieder als ungesungen markieren?')) return;
     done.clear();

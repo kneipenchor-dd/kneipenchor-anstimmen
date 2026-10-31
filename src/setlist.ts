@@ -78,6 +78,7 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
   const iconButton = (label: string, aria: string, onClick: () => void, disabled = false) => {
     const b = document.createElement('button');
     b.type = 'button';
+    b.className = 'setlist-icon-btn';
     b.textContent = label;
     b.setAttribute('aria-label', aria);
     b.disabled = disabled;
