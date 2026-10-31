@@ -99,7 +99,6 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
         dragging = true;
         items = Array.from(itemsList.children) as HTMLElement[];
         li.classList.add('dragging');
-        li.setPointerCapture(e.pointerId);
         navigator.vibrate?.(15);
         autoScroll();
       };
@@ -140,13 +139,21 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
         reorder();
       };
 
+      // Listener hängen an window (nicht am Element), weil das Umsortieren das Element im DOM verschiebt
+      // und dabei Pointer-Capture verloren ginge. cleanup ist idempotent.
+      let finished = false;
       const cleanup = () => {
+        if (finished) return;
+        finished = true;
         window.clearTimeout(timer);
         cancelAnimationFrame(scrollRaf);
-        li.removeEventListener('pointermove', onMove);
-        li.removeEventListener('pointerup', onEnd);
-        li.removeEventListener('pointercancel', onEnd);
-        document.removeEventListener('touchmove', blockScroll);
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onEnd);
+        window.removeEventListener('pointercancel', onEnd);
+        window.removeEventListener('touchend', onEnd);
+        window.removeEventListener('touchcancel', onEnd);
+        window.removeEventListener('blur', onEnd);
+        window.removeEventListener('touchmove', blockScroll);
       };
       const onEnd = () => {
         const wasDragging = dragging;
@@ -155,14 +162,18 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
         if (wasDragging) render();
       };
 
-      li.addEventListener('pointermove', onMove);
-      li.addEventListener('pointerup', onEnd);
-      li.addEventListener('pointercancel', onEnd);
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onEnd);
+      window.addEventListener('pointercancel', onEnd);
+      window.addEventListener('touchend', onEnd);
+      window.addEventListener('touchcancel', onEnd);
+      window.addEventListener('blur', onEnd);
       if (isTouch) {
-        document.addEventListener('touchmove', blockScroll, { passive: false });
+        window.addEventListener('touchmove', blockScroll, { passive: false });
         timer = window.setTimeout(begin, LONG_PRESS_MS);
       }
     });
+    li.addEventListener('contextmenu', e => e.preventDefault());
   };
 
   const smallButton = (label: string, aria: string, cls: string, onClick: () => void) => {
