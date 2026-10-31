@@ -333,7 +333,8 @@ function setupSetlistView(setlist: Setlist): void {
   const done = loadDone(setlist);
   const bar = document.getElementById('setlist-bar')!;
   const progress = document.getElementById('setlist-progress')!;
-  document.getElementById('setlist-name')!.textContent = setlist.name;
+  document.getElementById('app-title')!.textContent = setlist.name;
+  document.title = `${setlist.name} – Chor Anfangstöne`;
   bar.classList.remove('hidden');
   document.getElementById('search-section')?.classList.add('hidden');
   if (unknown.length > 0) {
@@ -346,24 +347,46 @@ function setupSetlistView(setlist: Setlist): void {
   const refresh = () => {
     rows().forEach(row => {
       const isDone = done.has(row.dataset.songId || '');
-      const hide = isDone;
-      row.classList.toggle('song-done', hide);
-      (row.nextElementSibling as HTMLElement | null)?.classList.toggle('song-done', hide);
-      const box = row.querySelector<HTMLInputElement>('.setlist-check-cell input');
-      if (box) box.checked = isDone;
+      row.classList.toggle('song-done', isDone);
+      (row.nextElementSibling as HTMLElement | null)?.classList.toggle('song-done', isDone);
     });
     const doneCount = songs.filter(s => done.has(s.id || '')).length;
     progress.textContent = `${doneCount}/${songs.length} gesungen`
       + (unknown.length ? ` · ${unknown.length} unbekannt` : '');
   };
 
-  document.getElementById('song-list')!.addEventListener('change', e => {
-    const box = e.target as HTMLInputElement;
-    const id = box.closest<HTMLElement>('.title-row')?.dataset.songId;
-    if (!id || !box.closest('.setlist-check-cell')) return;
-    if (box.checked) done.add(id); else done.delete(id);
+  let toastTimer: number | undefined;
+  const toast = document.createElement('div');
+  toast.className = 'setlist-toast hidden';
+  document.body.appendChild(toast);
+  const showUndo = (song: Song) => {
+    toast.innerHTML = '';
+    const text = document.createElement('span');
+    text.textContent = `„${song.title}“ gesungen`;
+    const undo = document.createElement('button');
+    undo.type = 'button';
+    undo.textContent = 'Rückgängig';
+    undo.addEventListener('click', () => {
+      done.delete(song.id || '');
+      saveDone(setlist, done);
+      toast.classList.add('hidden');
+      refresh();
+    });
+    toast.append(text, undo);
+    toast.classList.remove('hidden');
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toast.classList.add('hidden'), 6000);
+  };
+
+  document.getElementById('song-list')!.addEventListener('click', e => {
+    const btn = (e.target as HTMLElement).closest('.setlist-done-btn');
+    const id = btn?.closest<HTMLElement>('.title-row')?.dataset.songId;
+    const song = songs.find(s => s.id === id);
+    if (!id || !song) return;
+    done.add(id);
     saveDone(setlist, done);
     refresh();
+    showUndo(song);
   });
   document.getElementById('setlist-reset')!.addEventListener('click', () => {
     if (done.size === 0 || !confirm('Alle Lieder wieder als ungesungen markieren?')) return;
@@ -391,14 +414,19 @@ function displaySongs(songs: Song[], setlistMode = false): void {
     titleCell.colSpan = 5; // Überspannt alle 5 Spalten (4 Stimmen + Alle)
     if (song.id) titleRow.dataset.songId = song.id;
     if (setlistMode) {
-      const checkCell = document.createElement('td');
-      checkCell.className = 'setlist-check-cell';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.setAttribute('aria-label', `${song.title} als gesungen markieren`);
-      checkCell.appendChild(checkbox);
-      titleRow.appendChild(checkCell);
-      titleCell.colSpan = 4;
+      titleCell.textContent = '';
+      const text = document.createElement('span');
+      text.className = 'song-title-text';
+      text.textContent = song.title;
+      const doneBtn = document.createElement('button');
+      doneBtn.type = 'button';
+      doneBtn.className = 'setlist-done-btn';
+      doneBtn.textContent = '✓ gesungen';
+      doneBtn.setAttribute('aria-label', `${song.title} als gesungen markieren`);
+      const inner = document.createElement('div');
+      inner.className = 'setlist-title-cell';
+      inner.append(text, doneBtn);
+      titleCell.appendChild(inner);
     }
     titleRow.appendChild(titleCell);
     songList.appendChild(titleRow);

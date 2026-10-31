@@ -8,7 +8,7 @@
 <body>
   <div id="app">
     <header class="app-header">
-      <h1>Chor Anfangstöne</h1>
+      <h1 id="app-title">Chor Anfangstöne</h1>
       <div class="header-actions">
       <button id="setlist-editor-trigger" class="icon-button filter-trigger-button" aria-label="Setlist bearbeiten" title="Setlist erstellen/bearbeiten">📋</button>
       <button id="filter-modal-trigger" class="icon-button filter-trigger-button" aria-label="Filter öffnen" aria-haspopup="dialog" title="Filtereinstellungen">
@@ -56,14 +56,11 @@
     </header>
     <!-- Setlist-Leiste (nur sichtbar, wenn eine Setlist geladen ist) -->
     <div id="setlist-bar" class="setlist-bar hidden">
-      <div class="setlist-title-row">
-        <strong id="setlist-name"></strong>
-        <span id="setlist-progress"></span>
-      </div>
+      <div id="setlist-progress" class="setlist-progress"></div>
       <div class="setlist-actions">
         <button id="setlist-reset" type="button" class="setlist-btn">Zurücksetzen</button>
         <button id="setlist-edit" type="button" class="setlist-btn secondary">Bearbeiten</button>
-        <button id="setlist-close" type="button" class="setlist-btn secondary">Alle Lieder</button>
+        <button id="setlist-close" type="button" class="setlist-btn secondary">Setlist schließen</button>
       </div>
     </div>
 

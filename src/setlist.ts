@@ -86,9 +86,39 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
     return b;
   };
 
-  const move = (from: number, to: number) => {
-    [ids[from], ids[to]] = [ids[to], ids[from]];
-    render();
+  // Drag-and-drop per Pointer Events (funktioniert mit Maus und Touch)
+  const startDrag = (e: PointerEvent, handle: HTMLElement, index: number) => {
+    e.preventDefault();
+    const items = Array.from(itemsList.children) as HTMLElement[];
+    let from = index;
+    items[index].classList.add('dragging');
+    handle.setPointerCapture(e.pointerId);
+
+    const onMove = (ev: PointerEvent) => {
+      const y = ev.clientY;
+      let to = from;
+      items.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        if (y >= r.top && y <= r.bottom) to = i;
+      });
+      if (to !== from) {
+        const [moved] = ids.splice(from, 1);
+        ids.splice(to, 0, moved);
+        const [movedEl] = items.splice(from, 1);
+        items.splice(to, 0, movedEl);
+        items.forEach(el => itemsList.appendChild(el));
+        from = to;
+      }
+    };
+    const onEnd = () => {
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onEnd);
+      handle.removeEventListener('pointercancel', onEnd);
+      render();
+    };
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onEnd);
+    handle.addEventListener('pointercancel', onEnd);
   };
 
   function renderPicker(): void {
@@ -111,10 +141,14 @@ export function setupSetlistEditor(getSongs: () => Song[], initial: Setlist | nu
       const li = document.createElement('li');
       const span = document.createElement('span');
       span.textContent = title(id);
+      const handle = document.createElement('span');
+      handle.className = 'drag-handle';
+      handle.textContent = '⠿';
+      handle.title = 'Zum Sortieren ziehen';
+      handle.addEventListener('pointerdown', e => startDrag(e, handle, i));
       li.append(
+        handle,
         span,
-        iconButton('↑', 'Nach oben', () => move(i, i - 1), i === 0),
-        iconButton('↓', 'Nach unten', () => move(i, i + 1), i === ids.length - 1),
         iconButton('×', 'Entfernen', () => { ids.splice(i, 1); render(); }),
       );
       itemsList.appendChild(li);
