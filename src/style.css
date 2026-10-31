@@ -677,9 +677,9 @@ td:nth-child(5) .play-button.playing { /* Bass was 4th, now 5th */
 .setlist-bar.hidden { display: none; }
 .song-done { display: none !important; }
 .setlist-title-cell { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
-.setlist-done-btn { flex-shrink: 0; background: white; color: #2ecc71; border: 2px solid #2ecc71; border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s, color 0.2s; }
-.setlist-done-btn:hover, .setlist-done-btn:active { background: #2ecc71; color: white; }
-.setlist-progress { font-weight: 600; margin-bottom: 0.5rem; }
+.setlist-done-btn { flex-shrink: 0; background: white; color: #555; border: 2px solid #aaa; border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s, color 0.2s; }
+.setlist-done-btn:hover, .setlist-done-btn:active { background: #3498db; border-color: #3498db; color: white; }
+.setlist-progress { font-weight: 600; }
 .setlist-toast { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 900; display: flex; align-items: center; gap: 1rem; background: #333; color: white; padding: 0.6rem 1rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); max-width: 90%; }
 .setlist-toast.hidden { display: none; }
 .setlist-toast button { background: none; border: none; color: #7ec8ff; font: inherit; font-weight: 600; cursor: pointer; }
@@ -726,3 +726,10 @@ body.editing-setlist .description { display: none; }
 .setlist-editor-actions { flex-wrap: wrap; }
 .setlist-items li .drag-handle { flex: none; display: flex; align-items: center; justify-content: center; width: 3rem; min-height: 2.8rem; font-size: 1.6rem; color: #888; cursor: grab; touch-action: none; }
 .setlist-items li.dragging .drag-handle { cursor: grabbing; color: #3498db; }
+.setlist-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.setlist-bar.hidden { display: none; }
+.setlist-reset { background: none; border: none; color: #3498db; font: inherit; font-size: 0.9rem; cursor: pointer; padding: 4px 6px; }
+.setlist-reset:hover { text-decoration: underline; }
+.all-songs-link { color: #3498db; font-size: 0.9rem; margin-right: 0.5rem; text-decoration: none; }
+.all-songs-link:hover { text-decoration: underline; }
+.all-songs-link.hidden { display: none; }

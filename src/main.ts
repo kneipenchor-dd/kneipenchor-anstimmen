@@ -337,6 +337,7 @@ function setupSetlistView(setlist: Setlist): void {
   document.title = `${setlist.name} – Chor Anfangstöne`;
   bar.classList.remove('hidden');
   document.getElementById('search-section')?.classList.add('hidden');
+  document.getElementById('all-songs-link')?.classList.remove('hidden');
   if (unknown.length > 0) {
     console.warn('Unbekannte Lied-IDs in Setlist:', unknown);
   }
@@ -394,9 +395,6 @@ function setupSetlistView(setlist: Setlist): void {
     saveDone(setlist, done);
     refresh();
   });
-  document.getElementById('setlist-close')!.addEventListener('click', () => {
-    window.location.href = window.location.pathname;
-  });
   refresh();
 }
 
@@ -421,7 +419,7 @@ function displaySongs(songs: Song[], setlistMode = false): void {
       const doneBtn = document.createElement('button');
       doneBtn.type = 'button';
       doneBtn.className = 'setlist-done-btn';
-      doneBtn.textContent = '✓ gesungen';
+      doneBtn.textContent = '☐ gesungen';
       doneBtn.setAttribute('aria-label', `${song.title} als gesungen markieren`);
       const inner = document.createElement('div');
       inner.className = 'setlist-title-cell';
