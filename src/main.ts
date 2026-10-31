@@ -294,7 +294,7 @@ function loadAllSettings(): void {
 
 async function loadSongs(): Promise<void> {
   try {
-    const response = await fetch('./songs.json');
+    const response = await fetch('./songs.json', { cache: 'no-store' });
     if (!response.ok) {
       throw new Error('Konnte Lieder nicht laden');
     }

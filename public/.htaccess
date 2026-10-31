@@ -1,12 +1,16 @@
-# Prevent caching of index.html and songs.json so browsers always
-# validate these files with the server (304 Not Modified if unchanged).
-# Vite-generated assets (JS/CSS) use content hashes and can be cached indefinitely.
+# index.html and songs.json must always be revalidated; hashed JS/CSS assets can be cached forever.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|json)$">
+        Header always set Cache-Control "no-cache, no-store, must-revalidate"
+        Header always set Pragma "no-cache"
+        Header always set Expires "0"
+    </FilesMatch>
 
-<FilesMatch "^(index\.html|songs\.json)$">
-    Header set Cache-Control "no-cache, must-revalidate"
-</FilesMatch>
+    <FilesMatch "\.(js|css)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
 
-# Long-term caching for hashed assets
-<FilesMatch "\.(js|css)$">
-    Header set Cache-Control "public, max-age=31536000, immutable"
-</FilesMatch>
+<IfModule mod_expires.c>
+    ExpiresActive Off
+</IfModule>
