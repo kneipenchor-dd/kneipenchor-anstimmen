@@ -668,3 +668,19 @@ td:nth-child(5) .play-button.playing { /* Bass was 4th, now 5th */
 /* .section-content within the modal doesn't need specific styles if 
    .filter-section provides padding and .filter-options handles layout. */
 /* .modal .filter-section .section-content {} */
+
+/* Setlist */
+.header-actions { display: flex; align-items: center; }
+.setlist-bar { background: #eef4ff; border-radius: 8px; padding: 0.6rem 0.8rem; margin-bottom: 1rem; }
+.setlist-title-row { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
+.setlist-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.setlist-bar.hidden { display: none; }
+.song-done { display: none !important; }
+.title-row .setlist-check-cell { width: 2.5rem; text-align: center; }
+.title-row .setlist-check-cell input { width: 1.4rem; height: 1.4rem; }
+.setlist-input { width: 100%; box-sizing: border-box; padding: 0.5rem; margin: 0.5rem 0; font-size: 1rem; }
+.setlist-items, .setlist-picker { padding-left: 1.5rem; margin: 0.5rem 0; }
+.setlist-picker { list-style: none; padding: 0; max-height: 30vh; overflow-y: auto; }
+.setlist-items li, .setlist-picker li { display: flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0; }
+.setlist-items li span, .setlist-picker li span { flex: 1; }
+.setlist-editor-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }

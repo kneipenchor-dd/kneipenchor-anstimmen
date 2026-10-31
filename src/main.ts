@@ -1,6 +1,7 @@
 // main.ts
 import './style.css'
 import audioManager from './audio-manager';
+import { Setlist, parseSetlistFromUrl, resolveSetlistSongs, loadDone, saveDone, setupSetlistEditor } from './setlist';
 import { VoiceType, Song, SongNote, Voice, isSongNote } from './types';
 
 // Zuordnung von Voice-Keys zu Display-Namen
@@ -301,7 +302,13 @@ async function loadSongs(): Promise<void> {
 
     const data = await response.json();
     allSongs = data.songs; // Alle Songs für die Suche speichern
-    displaySongs(data.songs);
+    const setlist = parseSetlistFromUrl();
+    setupSetlistEditor(() => allSongs, setlist);
+    if (setlist) {
+      setupSetlistView(setlist);
+    } else {
+      displaySongs(data.songs);
+    }
 
     const loadingElement = document.getElementById('loading');
     const songTableElement = document.getElementById('song-table');
@@ -320,7 +327,58 @@ async function loadSongs(): Promise<void> {
   }
 }
 
-function displaySongs(songs: Song[]): void {
+// Setlist-Ansicht: feste Reihenfolge, gesungene Lieder werden ausgeblendet
+function setupSetlistView(setlist: Setlist): void {
+  const { songs, unknown } = resolveSetlistSongs(setlist, allSongs);
+  const done = loadDone(setlist);
+  const bar = document.getElementById('setlist-bar')!;
+  const progress = document.getElementById('setlist-progress')!;
+  const showDone = document.getElementById('setlist-show-done') as HTMLInputElement;
+  document.getElementById('setlist-name')!.textContent = setlist.name;
+  bar.classList.remove('hidden');
+  if (unknown.length > 0) {
+    console.warn('Unbekannte Lied-IDs in Setlist:', unknown);
+  }
+
+  displaySongs(songs, true);
+
+  const rows = () => document.querySelectorAll<HTMLElement>('#song-list .title-row');
+  const refresh = () => {
+    rows().forEach(row => {
+      const isDone = done.has(row.dataset.songId || '');
+      const hide = isDone && !showDone.checked;
+      row.classList.toggle('song-done', hide);
+      (row.nextElementSibling as HTMLElement | null)?.classList.toggle('song-done', hide);
+      const box = row.querySelector<HTMLInputElement>('.setlist-check-cell input');
+      if (box) box.checked = isDone;
+    });
+    const doneCount = songs.filter(s => done.has(s.id || '')).length;
+    progress.textContent = `${doneCount}/${songs.length} gesungen`
+      + (unknown.length ? ` · ${unknown.length} unbekannt` : '');
+  };
+
+  document.getElementById('song-list')!.addEventListener('change', e => {
+    const box = e.target as HTMLInputElement;
+    const id = box.closest<HTMLElement>('.title-row')?.dataset.songId;
+    if (!id || !box.closest('.setlist-check-cell')) return;
+    if (box.checked) done.add(id); else done.delete(id);
+    saveDone(setlist, done);
+    refresh();
+  });
+  showDone.addEventListener('change', refresh);
+  document.getElementById('setlist-reset')!.addEventListener('click', () => {
+    if (done.size === 0 || !confirm('Alle Lieder wieder als ungesungen markieren?')) return;
+    done.clear();
+    saveDone(setlist, done);
+    refresh();
+  });
+  document.getElementById('setlist-close')!.addEventListener('click', () => {
+    window.location.href = window.location.pathname;
+  });
+  refresh();
+}
+
+function displaySongs(songs: Song[], setlistMode = false): void {
   const songList = document.getElementById('song-list');
   if (!songList) return;
 
@@ -332,6 +390,17 @@ function displaySongs(songs: Song[]): void {
     titleCell.textContent = song.title;
     titleCell.className = 'song-title';
     titleCell.colSpan = 5; // Überspannt alle 5 Spalten (4 Stimmen + Alle)
+    if (song.id) titleRow.dataset.songId = song.id;
+    if (setlistMode) {
+      const checkCell = document.createElement('td');
+      checkCell.className = 'setlist-check-cell';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.setAttribute('aria-label', `${song.title} als gesungen markieren`);
+      checkCell.appendChild(checkbox);
+      titleRow.appendChild(checkCell);
+      titleCell.colSpan = 4;
+    }
     titleRow.appendChild(titleCell);
     songList.appendChild(titleRow);
 

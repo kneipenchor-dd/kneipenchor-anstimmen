@@ -57,6 +57,7 @@ songFiles.forEach(file => {
       console.warn(`Warnung: Song in ${file} hat nicht alle erforderlichen Felder (title, notes)`);
     }
 
+    song.id = file.replace(/\.json$/, ''); // Dateiname als stabile ID
     songs.push(song);
     console.log(`✓ ${file} (${song.title})`);
   } catch (error) {
